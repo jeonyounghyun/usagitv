@@ -1,0 +1,12 @@
+{
+  "name": "ops-status",
+  "private": true,
+  "description": "우사기 TV (먼작귀 몰아보기) + 업무 대시보드 위장 모드",
+  "scripts": {
+    "build": "python3 scripts/build.py"
+  },
+  "devDependencies": {
+    "@tabler/core": "1.4.0",
+    "@tabler/icons": "3.34.1"
+  }
+}

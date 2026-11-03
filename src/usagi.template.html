@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffe9a6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="우사기 TV">
+<title>우사기 텔레비전</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gaegu:wght@700&display=swap">
+<style>
+/* 태블릿 가로: 왼쪽 플레이어 + 오른쪽 회차 목록 / 세로·폰: 위아래로 쌓기. 데스크톱 앱의 버터·핑크 그림책 톤 유지 */
+:root{
+  --butter:#ffe9a6; --butter-d:#f7d36d; --cream:#fff8e6; --blush:#ffd5dc; --blush-d:#f5a9b8;
+  --mint:#dff1d8; --ink:#4a3524; --line:#6b4f3a; --muted:#8a6a50; --paper:#ffffff; --warn:#b5462f;
+  --shadow:rgba(107,79,58,.32);
+  --head:'Jua','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  --hand:'Gaegu','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{
+  color:var(--ink);font:700 19px/1.35 var(--hand);
+  background:var(--butter) radial-gradient(circle at 12px 12px,rgba(255,255,255,.55) 3px,transparent 4px) 0 0/34px 34px;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  display:flex;flex-direction:column;
+}
+button,input,h1{font-family:var(--head);font-weight:400}
+
+header{flex:none;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:10px max(16px,env(safe-area-inset-right,0px)) 4px max(16px,env(safe-area-inset-left,0px))}
+h1{margin:0;font-size:24px;padding:3px 16px 4px;background:var(--blush);border:1.5px solid var(--line);
+  border-radius:15px 19px 16px 20px/18px 14px 20px 16px;transform:rotate(-1.5deg);box-shadow:2px 2px 0 var(--shadow);white-space:nowrap;
+  cursor:default;user-select:none;-webkit-user-select:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+#now{flex:1 1 200px;min-width:0;font:400 18px var(--head);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#now .ep{color:var(--muted);margin-right:6px}
+
+.layout{flex:1 1 auto;min-height:0;display:flex;gap:14px;
+  padding:6px max(16px,env(safe-area-inset-right,0px)) 14px max(16px,env(safe-area-inset-left,0px))}
+.left{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:12px}
+.page{background:var(--cream);border:1.5px solid var(--line);border-radius:26px 30px 27px 31px/30px 26px 31px 27px;
+  box-shadow:4px 5px 0 var(--shadow);padding:10px}
+.frame{background:var(--butter);border:1.5px solid var(--line);border-radius:14px;padding:5px;box-shadow:2px 3px 0 var(--shadow)}
+.video{position:relative;width:100%;aspect-ratio:16/9;max-width:100%;background:#000;border-radius:6px;overflow:hidden}
+.video iframe,#player{position:absolute;inset:0;width:100%;height:100%;border:0}
+.cover{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:#f3e7cf;font:400 20px var(--head);padding:16px}
+
+.shelf{background:var(--blush);border:1.5px solid var(--line);border-radius:24px 28px 24px 28px/28px 24px 28px 24px;
+  box-shadow:3px 4px 0 var(--shadow);padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+button{font-size:19px;color:var(--ink);background:var(--paper);border:1.5px solid var(--line);border-radius:999px;
+  padding:8px 18px 9px;min-height:46px;cursor:pointer;box-shadow:0 3px 0 var(--shadow);touch-action:manipulation}
+button:active:not(:disabled){transform:translateY(2px);box-shadow:0 1px 0 var(--shadow)}
+button:disabled{opacity:.4;cursor:default}
+button.main{background:var(--butter-d)}
+:focus-visible{outline:3px solid var(--blush-d);outline-offset:2px}
+.pill{display:inline-flex;align-items:center;gap:8px;min-height:46px;padding:6px 16px 7px 12px;background:var(--paper);
+  border:1.5px solid var(--line);border-radius:999px;font:400 19px var(--head);cursor:pointer;box-shadow:0 3px 0 var(--shadow)}
+.pill:has(input:checked){background:var(--mint)}
+.pill input{width:20px;height:20px;margin:0;accent-color:#e77f95}
+#notice{min-height:1.35em;color:#5b6b2a;font-size:18px}
+#error{background:var(--paper);border:1.5px solid var(--line);border-radius:14px;padding:8px 12px;display:flex;flex-direction:column;gap:6px}
+#error strong{font:400 19px var(--head);color:var(--warn)}
+#error a{color:var(--ink)}
+
+.side{flex:0 0 340px;min-width:0;display:flex;flex-direction:column;background:var(--cream);border:1.5px solid var(--line);
+  border-radius:24px 20px 26px 22px/22px 26px 20px 24px;box-shadow:4px 5px 0 var(--shadow);overflow:hidden}
+.side-head{padding:12px 14px 10px;border-bottom:1.5px dashed var(--line);display:flex;flex-direction:column;gap:8px}
+.side-head .t{font:400 20px var(--head);display:flex;justify-content:space-between;align-items:baseline}
+.side-head .t span{font-size:16px;color:var(--muted);font-variant-numeric:tabular-nums}
+#search{width:100%;font:400 18px var(--head);color:var(--ink);background:var(--paper);border:1.5px solid var(--line);
+  border-radius:999px;padding:8px 14px;min-height:44px}
+#list{list-style:none;margin:0;padding:6px 8px 12px;overflow-y:auto;flex:1 1 auto;min-height:0;-webkit-overflow-scrolling:touch}
+#list li{display:flex;gap:10px;align-items:center;padding:9px 10px;border-radius:12px;cursor:pointer;min-width:0}
+#list li+li{margin-top:2px}
+#list li:active{background:var(--blush)}
+#list li.cur{background:var(--blush);outline:1.5px solid var(--line)}
+#list .no{flex:none;width:3.4em;font:400 16px var(--head);color:var(--muted);font-variant-numeric:tabular-nums;text-align:right}
+#list .nm{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:18px}
+#list .seen{flex:none;width:9px;height:9px;border-radius:50%;background:var(--blush-d)}
+#list .seen.done{background:#9fcf8f}
+#list .none{color:var(--muted);padding:12px;cursor:default}
+
+/* 세로 태블릿·폰: 목록을 아래로 */
+@media (max-width:900px),(orientation:portrait){
+  body{height:auto;min-height:100%}
+  .layout{flex-direction:column}
+  .side{flex:none;max-height:none}
+  #list{max-height:60vh}
+}
+@media (prefers-reduced-motion:reduce){button:active{transform:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1>우사기 텔레비전</h1>
+  <div id="now" aria-live="polite"></div>
+</header>
+
+<div class="layout">
+  <div class="left">
+    <div class="page"><div class="frame"><div class="video">
+      <div class="cover" id="cover">플레이어를 불러오는 중이에요…</div>
+      <div id="player"></div>
+    </div></div></div>
+
+    <div class="shelf">
+      <div class="row">
+        <button id="prev" type="button">◀ 이전 화</button>
+        <button id="next" type="button" class="main">다음 화 ▶</button>
+        <button id="startover" type="button">처음부터</button>
+        <button id="resume" type="button" hidden>이어서 보기</button>
+      </div>
+      <div class="row">
+        <label class="pill"><input id="advance" type="checkbox" checked><span>엔딩 나오면 다음 화로</span></label>
+      </div>
+      <div id="notice" role="status"></div>
+      <div id="error" role="alert" hidden>
+        <strong id="err-title"></strong>
+        <span id="err-detail"></span>
+        <a id="err-link" href="#" target="_blank" rel="noopener">유튜브에서 이 회차 열기</a>
+      </div>
+    </div>
+  </div>
+
+  <aside class="side">
+    <div class="side-head">
+      <div class="t">공식 회차 목록 <span id="count"></span></div>
+      <input id="search" type="search" placeholder="회차 번호나 제목 찾기" autocomplete="off" enterkeyhint="search">
+    </div>
+    <ol id="list"></ol>
+  </aside>
+</div>
+
+<script>
+// [회차, 영상ID, 제목, 엔딩곡 시작(초, 없으면 null)] — 말썽 우사기 0.5.1 앱의 공식 목록(AniBox 먼작귀 재생목록, 2026-10-16 확인)
+const EPISODES = {{CATALOG}};
+</script>
+<script>
+(function(){
+  "use strict";
+  const DEFAULT_ENDING = 60;          // 엔딩 위치가 확인되지 않은 회차는 1분에서 넘어감 (기존 앱과 같음)
+  const $ = (id) => document.getElementById(id);
+  const fmt = (s) => { s = Math.max(0, Math.floor(s)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
+
+  // ---------- 저장 (이 기기 브라우저에만) ----------
+  const KEY = "usagi-tv-v1";
+  function load(){ try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } }
+  const store = Object.assign({ last: null, advance: true, pos: {} }, load());
+  function persist(){ try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {} }
+
+  const byId = new Map(EPISODES.map((e, i) => [e[1], i]));
+  let idx = store.last && byId.has(store.last) ? byId.get(store.last) : 0;
+  $("advance").checked = store.advance !== false;
+  $("count").textContent = EPISODES.length + "편";
+
+  // ---------- 목록 ----------
+  function renderList(){
+    const q = $("search").value.trim().replace(/화$/, "");
+    const ol = $("list"); ol.textContent = "";
+    let shown = 0;
+    EPISODES.forEach((e, i) => {
+      if (q && !(String(e[0]) === q || e[2].includes(q))) return;
+      shown++;
+      const li = document.createElement("li");
+      if (i === idx) li.className = "cur";
+      const no = document.createElement("span"); no.className = "no"; no.textContent = e[0] + "화";
+      const nm = document.createElement("span"); nm.className = "nm"; nm.textContent = e[2];
+      li.append(no, nm);
+      const p = store.pos[e[1]];
+      if (p) { const d = document.createElement("span"); d.className = "seen" + (p.done ? " done" : ""); d.title = p.done ? "다 봤어요" : "보다 말았어요"; li.append(d); }
+      li.addEventListener("click", () => openAt(i, true));
+      ol.append(li);
+    });
+    if (!shown) { const li = document.createElement("li"); li.className = "none"; li.textContent = "찾는 회차가 없어요"; ol.append(li); }
+  }
+  function scrollToCurrent(){
+    const cur = $("list").querySelector(".cur");
+    if (cur) cur.scrollIntoView({ block: "nearest" });
+  }
+  $("search").addEventListener("input", renderList);
+
+  // ---------- 플레이어 ----------
+  let player = null, ready = false;
+  let armed = false, prevT = null, prevAt = 0, lastSave = 0, snapshot = null;
+
+  window.onYouTubeIframeAPIReady = function(){
+    player = new YT.Player("player", {
+      width: "100%", height: "100%",
+      playerVars: { playsinline: 1, rel: 0, hl: "ko", cc_lang_pref: "ko", origin: location.origin },
+      events: {
+        onReady(){ ready = true; $("cover").hidden = true; openAt(idx, false); },
+        onStateChange(e){ onState(e.data); },
+        onError(e){ showError(e.data); },
+      },
+    });
+  };
+  const s = document.createElement("script");
+  s.src = "https://www.youtube.com/iframe_api";
+  s.onerror = () => { $("cover").textContent = "유튜브에 연결할 수 없어요. 인터넷 연결을 확인한 뒤 새로고침해 주세요."; };
+  document.head.appendChild(s);
+
+  const cur = () => EPISODES[idx];
+  const endingAt = () => (cur()[3] != null ? cur()[3] : DEFAULT_ENDING);
+
+  function openAt(i, autoplay){
+    if (i < 0 || i >= EPISODES.length) return;
+    saveNow();
+    idx = i; armed = false; prevT = null;
+    const e = cur();
+    store.last = e[1]; persist();
+    const p = store.pos[e[1]];
+    snapshot = p && !p.done && p.t >= 5 ? p.t : null;
+    $("now").innerHTML = ""; const ep = document.createElement("span"); ep.className = "ep"; ep.textContent = e[0] + "화";
+    $("now").append(ep, document.createTextNode(e[2]));
+    $("prev").disabled = i === 0; $("next").disabled = i === EPISODES.length - 1;
+    $("resume").hidden = snapshot === null; if (snapshot !== null) $("resume").textContent = "이어서 보기 (" + fmt(snapshot) + ")";
+    $("error").hidden = true;
+    renderList(); scrollToCurrent();
+    if (!ready) return;
+    if (autoplay) player.loadVideoById({ videoId: e[1], startSeconds: 0 });
+    else player.cueVideoById({ videoId: e[1], startSeconds: 0 });
+  }
+
+  function onState(st){
+    if (st === YT.PlayerState.PLAYING) { $("error").hidden = true; keepAwake(true); }
+    if (st === YT.PlayerState.PAUSED) { saveNow(); keepAwake(false); }
+    if (st === YT.PlayerState.ENDED) { markDone(); keepAwake(false); if ($("advance").checked) goNext("다 봐서 다음 화로 넘어갔어요."); }
+  }
+
+  // 0.25초마다: 지금 화가 맞는지 확인 → 자연스럽게 재생되다 엔딩 지점에 닿으면 다음 화
+  setInterval(() => {
+    if (!ready || !player.getPlayerState || player.getPlayerState() !== YT.PlayerState.PLAYING) { prevT = null; return; }
+    const vd = player.getVideoData ? player.getVideoData() : null;
+    if (!vd || vd.video_id !== cur()[1]) return;            // 이전 영상의 늦은 값은 무시
+    const t = player.getCurrentTime(), now = Date.now(), end = endingAt();
+    if (prevT !== null) {
+      const allowed = ((now - prevAt) / 1000) * 2 + 1;       // 2배속 + 여유 1초 이상 튀면 '건너뛰기'로 간주
+      if (Math.abs(t - prevT) > allowed) armed = t < end - 0.5;
+      else if (t < end - 0.5) armed = true;
+    }
+    prevT = t; prevAt = now;
+    if ($("advance").checked && armed && t >= end) {
+      armed = false; markDone();
+      goNext("엔딩이 나와서 다음 화로 넘어갔어요.");
+      return;
+    }
+    if (now - lastSave > 5000) saveNow();
+  }, 250);
+
+  function saveNow(){
+    if (!ready || !player.getCurrentTime) return;
+    const vd = player.getVideoData ? player.getVideoData() : null;
+    if (!vd || vd.video_id !== cur()[1]) return;
+    const t = player.getCurrentTime();
+    if (!(t >= 5)) return;
+    lastSave = Date.now();
+    const old = store.pos[cur()[1]] || {};
+    store.pos[cur()[1]] = { t: Math.floor(t), done: !!old.done && t >= endingAt() };
+    persist();
+  }
+  function markDone(){ store.pos[cur()[1]] = { t: 0, done: true }; persist(); }
+
+  function goNext(msg){
+    if (idx >= EPISODES.length - 1) { notice("마지막 회차예요."); return; }
+    notice(msg || "");
+    openAt(idx + 1, true);
+  }
+
+  let noticeTimer;
+  function notice(t){ $("notice").textContent = t; clearTimeout(noticeTimer); if (t) noticeTimer = setTimeout(() => $("notice").textContent = "", 5000); }
+
+  const ERR = {
+    2: ["영상 주소가 잘못됐어요", "이 회차의 영상 ID가 올바르지 않아요."],
+    5: ["재생할 수 없어요", "이 기기의 브라우저에서 재생할 수 없는 영상이에요."],
+    100: ["영상을 찾을 수 없어요", "삭제됐거나 비공개로 바뀐 영상이에요."],
+    101: ["외부 재생이 막힌 영상이에요", "영상 주인이 다른 사이트에서의 재생을 허용하지 않았어요."],
+    150: ["외부 재생이 막힌 영상이에요", "영상 주인이 다른 사이트에서의 재생을 허용하지 않았어요."],
+    153: ["플레이어 설정 오류", "이 페이지를 파일로 열면 생기는 오류예요. 웹 주소(https://…)로 열어 주세요."],
+  };
+  function showError(code){
+    const m = ERR[code] || ["재생 오류", "알 수 없는 오류(" + code + ")가 났어요."];
+    $("err-title").textContent = m[0]; $("err-detail").textContent = m[1] + " 다음 화 버튼으로 넘어갈 수 있어요.";
+    $("err-link").href = "https://www.youtube.com/watch?v=" + cur()[1];
+    $("error").hidden = false;
+  }
+
+  // 재생 중엔 화면이 꺼지지 않게 (지원하는 브라우저만)
+  let lock = null;
+  async function keepAwake(on){
+    try {
+      if (on && !lock && navigator.wakeLock) { lock = await navigator.wakeLock.request("screen"); lock.addEventListener("release", () => lock = null); }
+      if (!on && lock) { await lock.release(); lock = null; }
+    } catch (e) { lock = null; }
+  }
+
+  $("prev").addEventListener("click", () => openAt(idx - 1, true));
+  $("next").addEventListener("click", () => goNext(""));
+  $("startover").addEventListener("click", () => { if (ready) { prevT = null; armed = true; player.seekTo(0, true); player.playVideo(); } });
+  $("resume").addEventListener("click", () => {
+    if (!ready || snapshot === null) return;
+    prevT = null; armed = snapshot < endingAt() - 0.5;
+    player.seekTo(snapshot, true); player.playVideo();
+    snapshot = null; $("resume").hidden = true;
+  });
+  $("advance").addEventListener("change", (e) => { store.advance = e.target.checked; persist(); });
+  window.addEventListener("pagehide", saveNow);
+  document.addEventListener("visibilitychange", () => { if (document.hidden) saveNow(); });
+
+  // 숨은 입구: 제목 스티커를 빠르게 세 번 누르면 대시보드 모드로 (보던 회차·위치는 그대로 이어짐)
+  let taps = [];
+  document.querySelector("h1").addEventListener("click", () => {
+    const now = Date.now(); taps = taps.filter((t) => now - t < 1500); taps.push(now);
+    if (taps.length >= 3) { saveNow(); location.href = "board.html"; }
+  });
+  // 급할 때: Esc 또는 ` 키를 누르면 대시보드의 그래프 화면으로 바로 전환
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" || e.key === "`") { e.preventDefault(); saveNow(); location.href = "board.html#hide"; }
+  });
+  // 영상을 클릭한 뒤에도 키가 먹히도록 초점을 페이지로 되돌림
+  window.addEventListener("blur", () => setTimeout(() => {
+    const a = document.activeElement;
+    if (a && a.tagName === "IFRAME") { a.blur(); window.focus(); }
+  }, 0));
+
+  renderList(); scrollToCurrent();
+})();
+</script>
+</body>
+</html>
