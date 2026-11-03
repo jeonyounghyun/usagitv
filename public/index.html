@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffe9a6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="우사기 TV">
+<title>우사기 텔레비전</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gaegu:wght@700&display=swap">
+<style>
+/* 태블릿 가로: 왼쪽 플레이어 + 오른쪽 회차 목록 / 세로·폰: 위아래로 쌓기. 데스크톱 앱의 버터·핑크 그림책 톤 유지 */
+:root{
+  --butter:#ffe9a6; --butter-d:#f7d36d; --cream:#fff8e6; --blush:#ffd5dc; --blush-d:#f5a9b8;
+  --mint:#dff1d8; --ink:#4a3524; --line:#6b4f3a; --muted:#8a6a50; --paper:#ffffff; --warn:#b5462f;
+  --shadow:rgba(107,79,58,.32);
+  --head:'Jua','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  --hand:'Gaegu','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{
+  color:var(--ink);font:700 19px/1.35 var(--hand);
+  background:var(--butter) radial-gradient(circle at 12px 12px,rgba(255,255,255,.55) 3px,transparent 4px) 0 0/34px 34px;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  display:flex;flex-direction:column;
+}
+button,input,h1{font-family:var(--head);font-weight:400}
+
+header{flex:none;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:10px max(16px,env(safe-area-inset-right,0px)) 4px max(16px,env(safe-area-inset-left,0px))}
+h1{margin:0;font-size:24px;padding:3px 16px 4px;background:var(--blush);border:1.5px solid var(--line);
+  border-radius:15px 19px 16px 20px/18px 14px 20px 16px;transform:rotate(-1.5deg);box-shadow:2px 2px 0 var(--shadow);white-space:nowrap;
+  cursor:default;user-select:none;-webkit-user-select:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+#now{flex:1 1 200px;min-width:0;font:400 18px var(--head);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#now .ep{color:var(--muted);margin-right:6px}
+
+.layout{flex:1 1 auto;min-height:0;display:flex;gap:14px;
+  padding:6px max(16px,env(safe-area-inset-right,0px)) 14px max(16px,env(safe-area-inset-left,0px))}
+.left{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:12px}
+.page{background:var(--cream);border:1.5px solid var(--line);border-radius:26px 30px 27px 31px/30px 26px 31px 27px;
+  box-shadow:4px 5px 0 var(--shadow);padding:10px}
+.frame{background:var(--butter);border:1.5px solid var(--line);border-radius:14px;padding:5px;box-shadow:2px 3px 0 var(--shadow)}
+.video{position:relative;width:100%;aspect-ratio:16/9;max-width:100%;background:#000;border-radius:6px;overflow:hidden}
+.video iframe,#player{position:absolute;inset:0;width:100%;height:100%;border:0}
+.cover{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:#f3e7cf;font:400 20px var(--head);padding:16px}
+
+.shelf{background:var(--blush);border:1.5px solid var(--line);border-radius:24px 28px 24px 28px/28px 24px 28px 24px;
+  box-shadow:3px 4px 0 var(--shadow);padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+button{font-size:19px;color:var(--ink);background:var(--paper);border:1.5px solid var(--line);border-radius:999px;
+  padding:8px 18px 9px;min-height:46px;cursor:pointer;box-shadow:0 3px 0 var(--shadow);touch-action:manipulation}
+button:active:not(:disabled){transform:translateY(2px);box-shadow:0 1px 0 var(--shadow)}
+button:disabled{opacity:.4;cursor:default}
+button.main{background:var(--butter-d)}
+:focus-visible{outline:3px solid var(--blush-d);outline-offset:2px}
+.pill{display:inline-flex;align-items:center;gap:8px;min-height:46px;padding:6px 16px 7px 12px;background:var(--paper);
+  border:1.5px solid var(--line);border-radius:999px;font:400 19px var(--head);cursor:pointer;box-shadow:0 3px 0 var(--shadow)}
+.pill:has(input:checked){background:var(--mint)}
+.pill input{width:20px;height:20px;margin:0;accent-color:#e77f95}
+#notice{min-height:1.35em;color:#5b6b2a;font-size:18px}
+#error{background:var(--paper);border:1.5px solid var(--line);border-radius:14px;padding:8px 12px;display:flex;flex-direction:column;gap:6px}
+#error strong{font:400 19px var(--head);color:var(--warn)}
+#error a{color:var(--ink)}
+
+.side{flex:0 0 340px;min-width:0;display:flex;flex-direction:column;background:var(--cream);border:1.5px solid var(--line);
+  border-radius:24px 20px 26px 22px/22px 26px 20px 24px;box-shadow:4px 5px 0 var(--shadow);overflow:hidden}
+.side-head{padding:12px 14px 10px;border-bottom:1.5px dashed var(--line);display:flex;flex-direction:column;gap:8px}
+.side-head .t{font:400 20px var(--head);display:flex;justify-content:space-between;align-items:baseline}
+.side-head .t span{font-size:16px;color:var(--muted);font-variant-numeric:tabular-nums}
+#search{width:100%;font:400 18px var(--head);color:var(--ink);background:var(--paper);border:1.5px solid var(--line);
+  border-radius:999px;padding:8px 14px;min-height:44px}
+#list{list-style:none;margin:0;padding:6px 8px 12px;overflow-y:auto;flex:1 1 auto;min-height:0;-webkit-overflow-scrolling:touch}
+#list li{display:flex;gap:10px;align-items:center;padding:9px 10px;border-radius:12px;cursor:pointer;min-width:0}
+#list li+li{margin-top:2px}
+#list li:active{background:var(--blush)}
+#list li.cur{background:var(--blush);outline:1.5px solid var(--line)}
+#list .no{flex:none;width:3.4em;font:400 16px var(--head);color:var(--muted);font-variant-numeric:tabular-nums;text-align:right}
+#list .nm{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:18px}
+#list .seen{flex:none;width:9px;height:9px;border-radius:50%;background:var(--blush-d)}
+#list .seen.done{background:#9fcf8f}
+#list .none{color:var(--muted);padding:12px;cursor:default}
+
+/* 세로 태블릿·폰: 목록을 아래로 */
+@media (max-width:900px),(orientation:portrait){
+  body{height:auto;min-height:100%}
+  .layout{flex-direction:column}
+  .side{flex:none;max-height:none}
+  #list{max-height:60vh}
+}
+@media (prefers-reduced-motion:reduce){button:active{transform:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1>우사기 텔레비전</h1>
+  <div id="now" aria-live="polite"></div>
+</header>
+
+<div class="layout">
+  <div class="left">
+    <div class="page"><div class="frame"><div class="video">
+      <div class="cover" id="cover">플레이어를 불러오는 중이에요…</div>
+      <div id="player"></div>
+    </div></div></div>
+
+    <div class="shelf">
+      <div class="row">
+        <button id="prev" type="button">◀ 이전 화</button>
+        <button id="next" type="button" class="main">다음 화 ▶</button>
+        <button id="startover" type="button">처음부터</button>
+        <button id="resume" type="button" hidden>이어서 보기</button>
+      </div>
+      <div class="row">
+        <label class="pill"><input id="advance" type="checkbox" checked><span>엔딩 나오면 다음 화로</span></label>
+      </div>
+      <div id="notice" role="status"></div>
+      <div id="error" role="alert" hidden>
+        <strong id="err-title"></strong>
+        <span id="err-detail"></span>
+        <a id="err-link" href="#" target="_blank" rel="noopener">유튜브에서 이 회차 열기</a>
+      </div>
+    </div>
+  </div>
+
+  <aside class="side">
+    <div class="side-head">
+      <div class="t">공식 회차 목록 <span id="count"></span></div>
+      <input id="search" type="search" placeholder="회차 번호나 제목 찾기" autocomplete="off" enterkeyhint="search">
+    </div>
+    <ol id="list"></ol>
+  </aside>
+</div>
+
+<script>
+// [회차, 영상ID, 제목, 엔딩곡 시작(초, 없으면 null)] — 말썽 우사기 0.5.1 앱의 공식 목록(AniBox 먼작귀 재생목록, 2026-10-16 확인)
+const EPISODES = [[1,"kzAfNg6pAvI","단단한 푸딩, 핫케이크",60.25],[2,"DPtH56UV3dQ","스핑크스, 실물이다",60.25],[3,"iysnbOGpvAU","맛나 오징어, 스튜파이",60.25],[4,"xhXLUkumc2g","브로콜리, 피자만두",60.25],[5,"HGDIu-q6XHI","까리메라, 까르메라",60.25],[6,"4sS7djJc1zk","친구, 팬케이크",60.25],[7,"Vg66rPDlwlU","요구르트, 카라 카드",60.25],[8,"qU8MhHccta0","다같이 요구르트, 털뭉치 나왔다",60.25],[9,"VVO3ffaExr4","먹보 동물, 돼지컵라면",null],[10,"XE_0yrgRC9s","작은 경단, 가본 적이 없는 마을의 꿈을 꾸었다",60.25],[11,"dIt_N7yNTgk","혼잣말",60.25],[12,"nCLx8vmHDqY","초밥, 초밥가게",60.25],[13,"XvJ6-UQbbYE","젤리 사이다, 구운 마시멜로",60.25],[14,"cC3BL9YeFSU","행운의 개복치, 다시마 과자",60.25],[15,"KOpx8ElYJDQ","젤리, 카눌레",55.25],[16,"f8_JB4t34S0","키메라, 싫어",60.25],[17,"dyNbwLmE7C8","플레멘 반응, 무기",60.25],[18,"_4HEngaUROg","풀뽑기, 커플 무기",60.25],[19,"AsKXFHOAvbY","이상한게 나왔어, 기운이 났어",60.25],[20,"3kSvvXrtd9w","울랄라",60.25],[21,"q5GhliPnrpA","무슨무슨 바니아 1편",60.25],[22,"0bti1kayoKk","무슨무슨 바니아 2편",60.25],[23,"DPZAv2s-Cpk","무슨무슨 바니아 3편, 케첩파스타",null],[24,"IOEPQkcuWsc","집, 친구 집에서 자다",60.25],[25,"x-OxpDicqKo","새벽시장, 드디어 해냈다!",60.25],[26,"_nzhe5Vjoks","무서운 이야기, 배 아파",60.25],[27,"YiXvoKtKn2Q","헤엄치자, 돌려줘!",60.25],[28,"RVG38PfaBP0","포쉐트, 쓰고 있어요",60.25],[29,"slyms27PQJQ","귀여운 척할까?, 내 작품",60.25],[30,"FdL6bGXqsrE","카메라 갖고 싶어, 에잇!",60.25],[31,"1dXQe8xmhAU","구덩이 1편",60.25],[32,"GQmeOs_lwMs","구덩이 2편",60.25],[33,"de1Dr2baYGc","구덩이 3편",60.25],[34,"RIjemOiCdpY","위대, 샤샥!",null],[35,"5dTRQblIt-Q","밤만쥬, 개복치 타기",60.25],[36,"i5HjcI960cQ","지팡이 1편",60.25],[37,"DIFB-xZdK0c","지팡이 2편",null],[38,"29DxKRaPkTg","지팡이 3편",60.25],[39,"lv1P47MubJo","지팡이 4편",60.25],[40,"Lsja9wxLOGA","귀가 뒤집어졌어, 타코스",60.25],[41,"w1Q_ouBmAZE","로우 1, 2편",60.25],[42,"tSjEgj5zjv0","로우 3편",60.25],[43,"vyh8osQnYeg","로우 4, 5편",60.25],[44,"qJjz52K0ZvE","아침 체조",60.25],[45,"8pZpOn3OTFA","구운 표고버섯, 슈크림",60.25],[46,"McD0o5tREj0","도시락, 잠옷입니다",60.25],[47,"xoBISdrp2zQ","소원 빌기",60.25],[48,"ZVuhcxAQaIM","별똥별, 간절한 소원",60.25],[49,"Bihe9F49OpI","사우나, 구연산",60.25],[50,"EIt_9R6uiUo","도토리 떨어뜨렸어요,  잠옷 판매",60.25],[51,"JXeE6pFSBoI","강해져라 1편",60.25],[52,"Od_aDJTnh7A","강해져라 2편",60.25],[53,"7DuwGgD0Thw","강해져라 3편, 상위 랭커",60.25],[54,"PN0VmWYBRII","얼굴 마크, 파르페",60.25],[55,"7YWh1etvQoQ","지방 그물, 토끼의 무기",60.25],[56,"qrSYMFdA4-w","야자열매, 야자열매 먹다",60.25],[57,"svuXycRFwD0","제초 검정, 제초 검정 시험을 볼까나?",null],[58,"RpRQWrtVSNk","공부하자, 점심밥",60.25],[59,"qDEN2hOdlAo","밤참, 시험이다",60.25],[60,"eGi-kIIUHjQ","어려웠다, 난 3급이야",60.25],[61,"3roPNdzI6OI","합격발표, 떨어져버렸다",60.25],[62,"Ypu_JRoqiiw","터벅터벅 집에 오는 길",60.25],[63,"NrjwVKThap0","축하해",60.25],[64,"8-2kl7Ufr1c","어떻게 된 거지?",60.25],[65,"j3M4zsyQsyM","너클 더스터, 보물",60.25],[66,"v_f2Uzk5z9s","토끼와 하늘다람쥐, 무한 쌀밥",null],[67,"fQ2GVLfmxlU","후리카케, 갓 지은 밥",null],[68,"D9x0H1ClPvk","달콤한 디저트, 솟아난다",60.25],[69,"ESIbieQzR-M","짭조름한 맛, 연어 육포",60.25],[70,"UVMt2wJw1RY","별 3개 레스토랑, 보수가 올랐다!",60.25],[71,"02jgl6Pnhfc","별 세 개",60.25],[72,"b5WbvqFADYE","뭐 하는 거지?",60.25],[73,"EP-dqvXw-bQ","도망쳐라, 힘내라",null],[74,"vmwXuGDNKlI","어떡하지?, 아무튼 해결",60.25],[75,"AELPK8eY22Q","다 먹을 수 없어",60.25],[76,"16cyhxJDvB8","땅 갈라짐, 가위 바위 보",null],[77,"sRNfublYlBY","의태형인가?",60.25],[78,"YdufTQLVvD4","카메라를 샀다, 카메라를 샀지만",60.25],[79,"7PqMwXtIVzg","찍을 수 없어",60.25],[80,"cXDK9tbNCEU","카메라는 무거워",60.25],[81,"Hv0QrqfC5OY","괜찮아, 흠집",60.25],[82,"OXf8IUiVd5k","하늘, 야간 작업",60.25],[83,"L_AHmrGElb0","보수",null],[84,"jD1NPsonick","아이스크림, 죽방울 아저씨",60.25],[85,"eRkOZRaO7Gw","스위치 1",60.25],[86,"G8RbrrDwWY4","스위치 2",null],[87,"JJcAwbmTXEc","스위치 3",60.25],[88,"96Ho_bFxPqA","스위치 4",60.25],[89,"ZTdG5TB-mzk","스위치 5",60.25],[90,"F4OgX_mt9TU","스위치 6",60.25],[91,"cQRRD8oMZLM","스위치 7",null],[92,"Ph_dKzMNx58","스위치 8",60.25],[93,"VkM8RWp0EZM","스위치 9",60.25],[94,"QKaThZL6DTU","우울해",null],[95,"bBdT7UbYywM","기운 내, 추억",60.25],[96,"z97tQ-ihItw","정말로 있었던 무서운 이야기 1",60.25],[97,"mfI4PXWx-Gg","정말로 있었던 무서운 이야기 2",60.25],[98,"LObt6DYXcFs","정말로 있었던 무서운 이야기 3",60.25],[99,"s1kzx8c3QR0","정말로 있었던 무서운 이야기 4",60.25],[100,"jUbSYJJSs_M","정말로 있었던 무서운 이야기 5",60.25],[101,"40Y_ucjGs8k","드라이브 1",60.25],[102,"gg41pyEdCgw","드라이브 2",60.25],[103,"L733URriIYM","고기 손질, 하이볼",60.25],[104,"xovw6QTkl18","빵",60.25],[105,"TYnfx0I0L0I","팬레터, 닭튀김 레몬",60.25],[106,"KfWHmlKBN6Q","포쉐트",60.25],[107,"e1q65RspBzk","정답, 재시험",null],[108,"K7Vc4EyLm5g","가자, 두근두근",60.25],[109,"8Jqr7bxJaK4","몇 번을 보든 응원할게",60.25],[110,"wEtfvFD_-4E","열심히 공부해",null],[111,"Dt6BVyftR6w","엄청 맛있는 푸딩, 응모",60.25],[112,"d_9Js8lLltg","당첨",60.25],[113,"2MszPHOnVEs","소고기 전골",60.25],[114,"R0es1Abvv6w","너무 친해졌어",60.25],[115,"klAvGGOTteo","피자 도우",60.25],[116,"HEi3ZnzTcX0","피자 만들기",60.25],[117,"TU01o8ySPGk","영웅의 비밀",60.25],[118,"2Aaml0YvsvU","사고뭉치",60.25],[120,"tHugIOgf3OU","내일 또 만나",60.25],[121,"vEgaGtdHn_Y","단풍놀이 1",60.25],[122,"KOcVnF0qjxs","단풍놀이 2",60.25],[123,"2QMuuqfdZJY","슈퍼 아르바이터 1",60.25],[124,"VgYkbgyXkGo","슈퍼 아르바이터 2",60.25],[125,"zvvMUMkYzlE","로우의 게시판, 고구마빵",60.25],[126,"z_O7ru5ZNwE","과자를 샀어",null],[127,"lp1XIRoLIv8","인기 있는 파자마",60.25],[128,"P88VS68vNu0","똑같은 파자마",60.25],[129,"KLyaUWAgZMo","커다란 토벌 1",60.25],[130,"IsJeye70jjU","커다란 토벌 2",60.25],[131,"G_C4w67DFzU","커다란 토벌 3",60.25],[132,"tm7rM_1xorY","연기, 깜짝 놀랄까?",null],[133,"zWE7ihTeBpo","바지락, 파자마 모임",60.25],[134,"tRnxBTqAWfY","슬라이스 치즈, 치즈스틱",60.25],[135,"5_ZlJFSHX5I","문어 비엔나 소시지",60.25],[136,"KM8I0QNFt-0","과자의 마을언덕",60.25],[137,"fqLZjm7Uf9s","꿀맛맨 1",60.25],[138,"PXfthVG9Bv4","꿀맛맨 2",70.25],[139,"hIgTCIu2xsc","꿀맛맨 3",60.25],[140,"UR0jA7XZBao","꿀맛맨 4",60.25],[141,"iMxKNOi_byg","꿀맛맨 5",60.25],[142,"AB5LCgfiOkM","비옷",60.25],[143,"Tt_S1XvHisE","만들다, 털갈이",60.25],[144,"kiKjMHFz8nU","파자마 파티스 1",71.25],[145,"L1s9EtPLmSM","파자마 파티스 2",74.25],[146,"_6CAjEUG2Z0","파자마 파티스 3",60.25],[147,"ZsxhggWRfio","파자마 파티스 4",60.25],[148,"brxYhi3P4DY","파자마 파티스 5",60.25],[149,"mVmWp4RZhWY","파자마 파티스 6",60.25],[150,"zHkwccnq6b4","파자마 파티스 7",60.25],[151,"JNIkaWYWSTs","파자마 파티스 8",60.25],[152,"sCQBOhAYEDc","파자마 파티스 9",60.25],[153,"C_DmFeDrFtI","파자마 파티스 10",60.25],[154,"BAHVAt-dLYU","파자마 파티스 11",60.25],[155,"HxIov6i-SRo","파자마 파티스 12",73.25],[156,"LMsuZeSRJko","무슨 생각하고 있어?",60.25],[157,"d5_Z8cvOHo8","날 봐, 츳츳츳",60.25],[158,"hi6gYEatHiM","아르장, 비 피하기",60.25],[159,"k7TAazQdIl4","샌드위치 기념",60.25],[160,"CGHG92tXGqk","칭찬받은 리본 1",60.25],[161,"yC-1lcrd6VQ","칭찬받은 리본 2",60.25],[162,"aCmAbCKMqBE","칭찬받은 리본 3",60.25],[163,"Kzq1yZf8ocw","칭찬받은 리본 4",60.25],[164,"C18d42OZ0eA","칭찬받은 리본 5",60.25],[165,"ysk9DOuIgjw","설탕 도넛, 재스민차",60.25],[166,"UH0kKTpex8Q","조수, 사부님",60.25],[167,"wGTIZA0eWHw","중지, 내 일 같아",60.25],[168,"vHhwatTwSPk","피크닉1",60.25],[169,"qvTZuwudGVE","피크닉2",63.25],[170,"191qLSvwigc","피크닉3",60.25],[171,"OtiKe6VY7gg","미르야므, 개미지옥",60.25],[172,"1C9D5Y5IZFE","치이카와의 꿈",60.25],[173,"HPUYUW8tz-E","치이카와의 꿈2",60.25],[174,"Sk3p0v33K3E","치이카와의 꿈3",60.25],[175,"7NiTWYDsaUA","치이카와의 꿈4",60.25],[176,"4KgwFvljqwo","치이카와의 꿈5",60.25],[177,"FGmahS4WxYc","치이카와의 꿈6",60.25],[178,"EZm1hOnPgTY","그 아이",60.25],[179,"p_VyA77WuQA","노랫소리",60.25],[180,"0RZqg7KMlfo","굴, 마감 스테이크",60.25],[181,"mTer2vzCmoY","캔 쿠키",66.25],[182,"uFJ8Gx3s_ig","밤에 일어난 일 1",70.25],[183,"Il-MfZyCKes","밤에 일어난 일 2",60.25],[184,"0LTOdAu_Y6A","밤에 일어난 일 3",59.25],[185,"8_UQJh80mYk","밤에 일어난 일 4",67.25],[186,"XRQnBPpknik","밤에 일어난 일 5",66.25],[187,"2_TlG53qjrA","프렌치토스트, 사부님?!",null],[188,"h5wii4ka_XA","빛나는 고리, 벌레 꿈",60.25],[189,"Yboe2ujZ9q8","오데와 함께 감옥 1",60.25],[190,"dUs8dHtVn6o","오데와 함께 감옥 2",60.25],[191,"k2uLw3udETw","오데와 함께 감옥 3",64.25],[192,"F7fwHlw31BQ","오데와 함께 감옥 4",60.25],[193,"bpg03tmUTVE","오데와 함께 감옥 5",null],[194,"JlrLI06uDHg","오데와 함께 감옥 6",60.25],[195,"xtrqYaUZEfY","오데와 함께 감옥 7",75.25],[196,"3jmpSo5e9lk","오데와 함께 감옥 8",60.25],[197,"UgH72xG-9Oo","오데와 함께 감옥 9",null],[198,"BVzxUqjbmzk","오데와 함께 감옥 10",null],[199,"H589DjkC_oI","청운",null],[200,"0tFQO61H90Q","코스 요리 1",60.25],[201,"m36-L4NlfMU","코스 요리2",null],[202,"DmmqC5iUx6s","슬롯 게임1",60.25],[203,"WuRep2_jDww","슬롯 게임2",60.25],[204,"clNhNnqWb7o","슬롯 게임3",null],[205,"gIwB3mN3SI0","슬롯 게임4",60.25],[206,"w1I7oIPVTfU","슬롯 게임5",60.25],[207,"52LCu1tCMkU","슬롯 게임6",null],[208,"9lZglhSRsLE","슬롯 게임7",null],[209,"k9NVwuaep2o","슬롯 게임8",null],[210,"UUzmcUc3oJw","슬롯 게임9",null],[211,"l64Nb5vVonQ","슬롯 게임10, 트럼프",null],[212,"kweP_K1uxb0","가위바위보, 무기의 맛",60.25],[213,"p_1bZI0AYq0","검은 별똥별 이야기, 서서 먹는 국수",64.25],[215,"-T7gNgQdP-o","검은 별똥별 전편1",61.25],[216,"HLAr7rmHq0w","검은 별똥별 전편2",null],[217,"RXBgC0lQJ-4","검은 별똥별 전편3",64.25],[218,"OoJfctq1aT8","검은 별똥별 전편4",null],[219,"8vgMzL0WRyw","검은 별똥별 전편5",null],[220,"o0TbgUOvLOI","검은 별똥별 전편6",null],[221,"Q8aoOLN9Vlg","검은 별똥별 전편7",null],[222,"QsSv-80phOw","검은 별똥별 후편1",null],[223,"eTfNSNdFydQ","검은 별똥별 후편2",60.25],[224,"SHmmc_AufpU","검은 별똥별 후편3",null],[225,"F0X7QEuY__Y","검은 별똥별 후편4",null],[226,"arF4UlQiapE","검은 별똥별 후편5",null],[227,"givOQhDemXo","검은 별똥별 후편6",null],[228,"gIBAZjfUDDc","검은 별똥별 후편7",null],[229,"y5O4o9DHVp4","검은 별똥별 후편8",null],[230,"asd_vF9JcJU","검은 별똥별 후편9",null],[231,"1Figz6jMLMU","검은 별똥별 후편10",null],[232,"SS6-SR-akuI","검은 별똥별 후편11",null],[233,"An4f2hHnC1k","검은 별똥별 후편12",null],[234,"sxOLQ09kByk","검은 별똥별 후편13",null],[235,"I7dPSO9NFT0","검은 별똥별 후편14",null],[236,"LqsFonI7XKk","단팥죽/밤의 메밀국수",null],[237,"pgJ_KJfdM7A","아직 축축해/털",null],[238,"XwB4FtBjNVo","가르마의 하루1",null],[239,"HG8YJALZonw","가르마의 하루2/모자",null],[241,"KupEgm9ZEaw","고추냉이 맛 과자",null],[242,"_Jv8JIq0UuE","어묵탕 국물",null],[243,"g8gpSXmuFpY","채취/술 자격증",null],[244,"wkuC_q6RSAU","자격증의 추억/어묵",null],[245,"woJIq8OIr7o","하고 싶은 일 리스트1",null],[246,"2kFdAkh8pFI","하고 싶은 일 리스트2",null],[247,"kJnFGdmFqTg","하고 싶은 일 리스트3",null],[248,"YuM-BTDFLog","하고 싶은 일 리스트4",63.25]];
+</script>
+<script>
+(function(){
+  "use strict";
+  const DEFAULT_ENDING = 60;          // 엔딩 위치가 확인되지 않은 회차는 1분에서 넘어감 (기존 앱과 같음)
+  const $ = (id) => document.getElementById(id);
+  const fmt = (s) => { s = Math.max(0, Math.floor(s)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
+
+  // ---------- 저장 (이 기기 브라우저에만) ----------
+  const KEY = "usagi-tv-v1";
+  function load(){ try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } }
+  const store = Object.assign({ last: null, advance: true, pos: {} }, load());
+  function persist(){ try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {} }
+
+  const byId = new Map(EPISODES.map((e, i) => [e[1], i]));
+  let idx = store.last && byId.has(store.last) ? byId.get(store.last) : 0;
+  $("advance").checked = store.advance !== false;
+  $("count").textContent = EPISODES.length + "편";
+
+  // ---------- 목록 ----------
+  function renderList(){
+    const q = $("search").value.trim().replace(/화$/, "");
+    const ol = $("list"); ol.textContent = "";
+    let shown = 0;
+    EPISODES.forEach((e, i) => {
+      if (q && !(String(e[0]) === q || e[2].includes(q))) return;
+      shown++;
+      const li = document.createElement("li");
+      if (i === idx) li.className = "cur";
+      const no = document.createElement("span"); no.className = "no"; no.textContent = e[0] + "화";
+      const nm = document.createElement("span"); nm.className = "nm"; nm.textContent = e[2];
+      li.append(no, nm);
+      const p = store.pos[e[1]];
+      if (p) { const d = document.createElement("span"); d.className = "seen" + (p.done ? " done" : ""); d.title = p.done ? "다 봤어요" : "보다 말았어요"; li.append(d); }
+      li.addEventListener("click", () => openAt(i, true));
+      ol.append(li);
+    });
+    if (!shown) { const li = document.createElement("li"); li.className = "none"; li.textContent = "찾는 회차가 없어요"; ol.append(li); }
+  }
+  function scrollToCurrent(){
+    const cur = $("list").querySelector(".cur");
+    if (cur) cur.scrollIntoView({ block: "nearest" });
+  }
+  $("search").addEventListener("input", renderList);
+
+  // ---------- 플레이어 ----------
+  let player = null, ready = false;
+  let armed = false, prevT = null, prevAt = 0, lastSave = 0, snapshot = null;
+
+  window.onYouTubeIframeAPIReady = function(){
+    player = new YT.Player("player", {
+      width: "100%", height: "100%",
+      playerVars: { playsinline: 1, rel: 0, hl: "ko", cc_lang_pref: "ko", origin: location.origin },
+      events: {
+        onReady(){ ready = true; $("cover").hidden = true; openAt(idx, false); },
+        onStateChange(e){ onState(e.data); },
+        onError(e){ showError(e.data); },
+      },
+    });
+  };
+  const s = document.createElement("script");
+  s.src = "https://www.youtube.com/iframe_api";
+  s.onerror = () => { $("cover").textContent = "유튜브에 연결할 수 없어요. 인터넷 연결을 확인한 뒤 새로고침해 주세요."; };
+  document.head.appendChild(s);
+
+  const cur = () => EPISODES[idx];
+  const endingAt = () => (cur()[3] != null ? cur()[3] : DEFAULT_ENDING);
+
+  function openAt(i, autoplay){
+    if (i < 0 || i >= EPISODES.length) return;
+    saveNow();
+    idx = i; armed = false; prevT = null;
+    const e = cur();
+    store.last = e[1]; persist();
+    const p = store.pos[e[1]];
+    snapshot = p && !p.done && p.t >= 5 ? p.t : null;
+    $("now").innerHTML = ""; const ep = document.createElement("span"); ep.className = "ep"; ep.textContent = e[0] + "화";
+    $("now").append(ep, document.createTextNode(e[2]));
+    $("prev").disabled = i === 0; $("next").disabled = i === EPISODES.length - 1;
+    $("resume").hidden = snapshot === null; if (snapshot !== null) $("resume").textContent = "이어서 보기 (" + fmt(snapshot) + ")";
+    $("error").hidden = true;
+    renderList(); scrollToCurrent();
+    if (!ready) return;
+    if (autoplay) player.loadVideoById({ videoId: e[1], startSeconds: 0 });
+    else player.cueVideoById({ videoId: e[1], startSeconds: 0 });
+  }
+
+  function onState(st){
+    if (st === YT.PlayerState.PLAYING) { $("error").hidden = true; keepAwake(true); }
+    if (st === YT.PlayerState.PAUSED) { saveNow(); keepAwake(false); }
+    if (st === YT.PlayerState.ENDED) { markDone(); keepAwake(false); if ($("advance").checked) goNext("다 봐서 다음 화로 넘어갔어요."); }
+  }
+
+  // 0.25초마다: 지금 화가 맞는지 확인 → 자연스럽게 재생되다 엔딩 지점에 닿으면 다음 화
+  setInterval(() => {
+    if (!ready || !player.getPlayerState || player.getPlayerState() !== YT.PlayerState.PLAYING) { prevT = null; return; }
+    const vd = player.getVideoData ? player.getVideoData() : null;
+    if (!vd || vd.video_id !== cur()[1]) return;            // 이전 영상의 늦은 값은 무시
+    const t = player.getCurrentTime(), now = Date.now(), end = endingAt();
+    if (prevT !== null) {
+      const allowed = ((now - prevAt) / 1000) * 2 + 1;       // 2배속 + 여유 1초 이상 튀면 '건너뛰기'로 간주
+      if (Math.abs(t - prevT) > allowed) armed = t < end - 0.5;
+      else if (t < end - 0.5) armed = true;
+    }
+    prevT = t; prevAt = now;
+    if ($("advance").checked && armed && t >= end) {
+      armed = false; markDone();
+      goNext("엔딩이 나와서 다음 화로 넘어갔어요.");
+      return;
+    }
+    if (now - lastSave > 5000) saveNow();
+  }, 250);
+
+  function saveNow(){
+    if (!ready || !player.getCurrentTime) return;
+    const vd = player.getVideoData ? player.getVideoData() : null;
+    if (!vd || vd.video_id !== cur()[1]) return;
+    const t = player.getCurrentTime();
+    if (!(t >= 5)) return;
+    lastSave = Date.now();
+    const old = store.pos[cur()[1]] || {};
+    store.pos[cur()[1]] = { t: Math.floor(t), done: !!old.done && t >= endingAt() };
+    persist();
+  }
+  function markDone(){ store.pos[cur()[1]] = { t: 0, done: true }; persist(); }
+
+  function goNext(msg){
+    if (idx >= EPISODES.length - 1) { notice("마지막 회차예요."); return; }
+    notice(msg || "");
+    openAt(idx + 1, true);
+  }
+
+  let noticeTimer;
+  function notice(t){ $("notice").textContent = t; clearTimeout(noticeTimer); if (t) noticeTimer = setTimeout(() => $("notice").textContent = "", 5000); }
+
+  const ERR = {
+    2: ["영상 주소가 잘못됐어요", "이 회차의 영상 ID가 올바르지 않아요."],
+    5: ["재생할 수 없어요", "이 기기의 브라우저에서 재생할 수 없는 영상이에요."],
+    100: ["영상을 찾을 수 없어요", "삭제됐거나 비공개로 바뀐 영상이에요."],
+    101: ["외부 재생이 막힌 영상이에요", "영상 주인이 다른 사이트에서의 재생을 허용하지 않았어요."],
+    150: ["외부 재생이 막힌 영상이에요", "영상 주인이 다른 사이트에서의 재생을 허용하지 않았어요."],
+    153: ["플레이어 설정 오류", "이 페이지를 파일로 열면 생기는 오류예요. 웹 주소(https://…)로 열어 주세요."],
+  };
+  function showError(code){
+    const m = ERR[code] || ["재생 오류", "알 수 없는 오류(" + code + ")가 났어요."];
+    $("err-title").textContent = m[0]; $("err-detail").textContent = m[1] + " 다음 화 버튼으로 넘어갈 수 있어요.";
+    $("err-link").href = "https://www.youtube.com/watch?v=" + cur()[1];
+    $("error").hidden = false;
+  }
+
+  // 재생 중엔 화면이 꺼지지 않게 (지원하는 브라우저만)
+  let lock = null;
+  async function keepAwake(on){
+    try {
+      if (on && !lock && navigator.wakeLock) { lock = await navigator.wakeLock.request("screen"); lock.addEventListener("release", () => lock = null); }
+      if (!on && lock) { await lock.release(); lock = null; }
+    } catch (e) { lock = null; }
+  }
+
+  $("prev").addEventListener("click", () => openAt(idx - 1, true));
+  $("next").addEventListener("click", () => goNext(""));
+  $("startover").addEventListener("click", () => { if (ready) { prevT = null; armed = true; player.seekTo(0, true); player.playVideo(); } });
+  $("resume").addEventListener("click", () => {
+    if (!ready || snapshot === null) return;
+    prevT = null; armed = snapshot < endingAt() - 0.5;
+    player.seekTo(snapshot, true); player.playVideo();
+    snapshot = null; $("resume").hidden = true;
+  });
+  $("advance").addEventListener("change", (e) => { store.advance = e.target.checked; persist(); });
+  window.addEventListener("pagehide", saveNow);
+  document.addEventListener("visibilitychange", () => { if (document.hidden) saveNow(); });
+
+  // 숨은 입구: 제목 스티커를 빠르게 세 번 누르면 대시보드 모드로 (보던 회차·위치는 그대로 이어짐)
+  let taps = [];
+  document.querySelector("h1").addEventListener("click", () => {
+    const now = Date.now(); taps = taps.filter((t) => now - t < 1500); taps.push(now);
+    if (taps.length >= 3) { saveNow(); location.href = "board.html"; }
+  });
+  // 급할 때: Esc 또는 ` 키를 누르면 대시보드의 그래프 화면으로 바로 전환
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" || e.key === "`") { e.preventDefault(); saveNow(); location.href = "board.html#hide"; }
+  });
+  // 영상을 클릭한 뒤에도 키가 먹히도록 초점을 페이지로 되돌림
+  window.addEventListener("blur", () => setTimeout(() => {
+    const a = document.activeElement;
+    if (a && a.tagName === "IFRAME") { a.blur(); window.focus(); }
+  }, 0));
+
+  renderList(); scrollToCurrent();
+})();
+</script>
+</body>
+</html>

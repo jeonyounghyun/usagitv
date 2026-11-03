@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>운영 현황 대시보드</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23066fd1'/%3E%3Cpath d='M8 22V14M14 22V9M20 22V17M26 22V12' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+{{TABLER_CSS}}
+</style>
+<style>
+:root{
+  --tblr-font-sans-serif:-apple-system,BlinkMacSystemFont,"Segoe UI","Malgun Gothic","맑은 고딕","Apple SD Gothic Neo",sans-serif;
+  --tblr-body-font-family:var(--tblr-font-sans-serif);
+}
+body{font-family:var(--tblr-font-sans-serif);font-feature-settings:normal}
+.chart-sm{height:40px}
+.chart-sm svg{width:100%;height:100%;display:block}
+.screen{position:relative;width:100%;aspect-ratio:16/9;max-width:100%;border-radius:var(--tblr-border-radius);overflow:hidden;background:#101826}
+.screen #player,.screen iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.decoy{position:absolute;inset:0;background:var(--tblr-bg-surface)}
+.decoy svg{width:100%;height:100%;display:block}
+.pipnote{display:grid;place-items:center;text-align:center}
+.pipnote[hidden]{display:none}
+.list-scroll{flex:1 1 auto;min-height:340px;position:relative}
+.list-scroll>div{position:absolute;inset:0;overflow:auto}
+.list-scroll thead th{position:sticky;top:0;z-index:1;background:var(--tblr-bg-surface-secondary)}
+
+@media (min-width:992px){
+  #colMon,#colList{flex:0 0 var(--w,auto);max-width:var(--w,none);width:var(--w,auto)}
+  #colMon{position:relative}
+  .grip{position:absolute;top:0;bottom:0;right:-7px;width:14px;cursor:col-resize;z-index:5;display:flex;align-items:center;justify-content:center;touch-action:none}
+  .grip span{width:4px;height:48px;border-radius:4px;background:var(--tblr-border-color);transition:background .15s,height .15s}
+  .grip:hover span,body.resizing .grip span{background:var(--tblr-primary);height:72px}
+}
+@media (max-width:991.98px){.grip{display:none}}
+body.resizing{cursor:col-resize;user-select:none}
+body.resizing iframe{pointer-events:none}
+#sizes .btn.active{background:var(--tblr-primary);border-color:var(--tblr-primary);color:#fff}
+#rows tr{cursor:pointer}
+#rows td:first-child{white-space:nowrap;font-variant-numeric:tabular-nums}
+#rows tr.cur{background:var(--tblr-primary-lt)}
+#rows td.nm{max-width:0;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ver{cursor:default;user-select:none}
+.weekly svg{width:100%;height:230px;display:block}
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="navbar navbar-expand-md d-print-none">
+    <div class="container-xl">
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu" aria-controls="navbar-menu" aria-expanded="false" aria-label="메뉴 열기"><span class="navbar-toggler-icon"></span></button>
+      <div class="navbar-brand navbar-brand-autodark d-none-navbar-horizontal pe-0 pe-md-3">
+        <a href="#" class="d-flex align-items-center gap-2 text-reset text-decoration-none">
+          <span class="avatar avatar-sm bg-primary text-white">{{i:device-desktop-analytics}}</span>
+          <span class="fw-bold">운영관리 시스템</span>
+        </a>
+      </div>
+      <div class="navbar-nav flex-row order-md-last">
+        <div class="d-none d-md-flex me-3">
+          <div class="input-icon">
+            <span class="input-icon-addon">{{i:search}}</span>
+            <input id="search" type="search" class="form-control" placeholder="과제 검색" autocomplete="off" aria-label="과제 검색">
+          </div>
+        </div>
+        <div class="nav-item dropdown d-none d-md-flex me-3">
+          <a href="#" class="nav-link px-0" data-bs-toggle="dropdown" tabindex="-1" aria-label="알림 보기">{{i:bell}}<span class="badge bg-red"></span></a>
+          <div class="dropdown-menu dropdown-menu-arrow dropdown-menu-end dropdown-menu-card">
+            <div class="card">
+              <div class="card-header"><h3 class="card-title">알림</h3></div>
+              <div class="list-group list-group-flush list-group-hoverable">
+                <div class="list-group-item"><div class="row align-items-center"><div class="col-auto"><span class="status-dot status-dot-animated bg-red d-block"></span></div><div class="col text-truncate"><span class="text-body d-block">일정 지연 위험 과제 1건</span><div class="d-block text-secondary text-truncate mt-n1">인터페이스 연계 시험 · 담당 확인 필요</div></div></div></div>
+                <div class="list-group-item"><div class="row align-items-center"><div class="col-auto"><span class="status-dot d-block"></span></div><div class="col text-truncate"><span class="text-body d-block">주간 점검 회의 안내</span><div class="d-block text-secondary text-truncate mt-n1">금요일 10:00 · 3층 회의실</div></div></div></div>
+                <div class="list-group-item"><div class="row align-items-center"><div class="col-auto"><span class="status-dot d-block"></span></div><div class="col text-truncate"><span class="text-body d-block">산출물 승인 완료</span><div class="d-block text-secondary text-truncate mt-n1">요구사항 정의서 v1.3</div></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="nav-item dropdown">
+          <a href="#" class="nav-link d-flex lh-1 text-reset p-0" data-bs-toggle="dropdown" aria-label="사용자 메뉴">
+            <span class="avatar avatar-sm">M</span>
+            <div class="d-none d-xl-block ps-2"><div>Marcus</div><div class="mt-1 small text-secondary">사업관리</div></div>
+          </a>
+          <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+            <a href="#" class="dropdown-item">내 정보</a><a href="#" class="dropdown-item">환경설정</a>
+            <div class="dropdown-divider"></div><a href="#" class="dropdown-item">로그아웃</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+  <header class="navbar-expand-md">
+    <div class="collapse navbar-collapse" id="navbar-menu">
+      <div class="navbar">
+        <div class="container-xl">
+          <ul class="navbar-nav">
+            <li class="nav-item active"><a class="nav-link" href="#"><span class="nav-link-icon">{{i:home}}</span><span class="nav-link-title">대시보드</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="#"><span class="nav-link-icon">{{i:checklist}}</span><span class="nav-link-title">과제 현황</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="#"><span class="nav-link-icon">{{i:calendar}}</span><span class="nav-link-title">일정 관리</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="#"><span class="nav-link-icon">{{i:users}}</span><span class="nav-link-title">인력 투입</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="#"><span class="nav-link-icon">{{i:file-text}}</span><span class="nav-link-title">산출물</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="#"><span class="nav-link-icon">{{i:chart-bar}}</span><span class="nav-link-title">보고서</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="#"><span class="nav-link-icon">{{i:settings}}</span><span class="nav-link-title">설정</span></a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="page-wrapper">
+    <div class="page-header d-print-none">
+      <div class="container-xl">
+        <div class="row g-2 align-items-center">
+          <div class="col">
+            <div class="page-pretitle">개요 · <span id="today"></span></div>
+            <h2 class="page-title">운영 현황</h2>
+          </div>
+          <div class="col-auto ms-auto d-print-none">
+            <div class="btn-list">
+              <a href="#" class="btn btn-outline-secondary d-none d-sm-inline-flex">{{i:refresh}}새로고침</a>
+              <a href="#" class="btn btn-outline-secondary d-none d-sm-inline-flex">{{i:download}}보고서 내보내기</a>
+              <a href="#" class="btn btn-primary">{{i:plus}}새 과제</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <div class="container-xl">
+        <div class="row row-deck row-cards">
+          <span id="kpiAnchor" hidden></span>
+
+          <div class="col-lg-8" id="colMon">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">실시간 모니터링</h3>
+                <span class="status status-green ms-2"><span class="status-dot status-dot-animated"></span>LIVE</span>
+                <span class="text-secondary small ms-3 text-truncate" id="nowsub" style="max-width:40%"></span>
+                <div class="card-actions d-flex gap-2">
+                  <div class="btn-group btn-group-sm" role="group" aria-label="화면 크기" id="sizes"><button type="button" class="btn" data-size="s">작게</button><button type="button" class="btn" data-size="m">보통</button><button type="button" class="btn" data-size="l">크게</button></div>
+                  <button class="btn btn-sm btn-outline-secondary" id="pipBtn" type="button" title="다른 창 위에 작게 띄우기">{{i:picture-in-picture-on}}<span id="pipLabel">작은 창</span></button>
+                  <button class="btn btn-sm btn-outline-secondary" id="hide" type="button" title="Esc">{{i:switch-horizontal}}<span id="hideLabel">화면 전환</span></button>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="screen">
+                  <div id="player"></div>
+                  <div class="decoy pipnote" id="pipNote" hidden><div><div class="h3 mb-1">작은 창에서 표시 중</div><div class="text-secondary small">작은 창을 닫으면 여기로 돌아옵니다</div></div></div>
+                  <div class="decoy" id="decoy" hidden><svg id="decoyChart" viewBox="0 0 640 360" preserveAspectRatio="none" aria-hidden="true"></svg></div>
+                </div>
+                <div id="msg" class="small text-secondary mt-2" role="status" style="min-height:1.5em"></div>
+              </div>
+              <div class="card-footer">
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                  <div class="btn-list">
+                    <button class="btn btn-sm" id="prev" type="button">{{i:player-skip-back}}이전</button>
+                    <button class="btn btn-sm btn-primary" id="play" type="button"><span id="playIco">{{i:player-play}}</span><span id="playLabel">재생</span></button>
+                    <button class="btn btn-sm" id="next" type="button">다음{{i:player-skip-forward}}</button>
+                    <button class="btn btn-sm" id="resume" type="button" hidden>{{i:history}}<span id="resumeLabel">이어서</span></button>
+                  </div>
+                  <div class="ms-auto d-flex gap-3">
+                    <label class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" id="advance" checked><span class="form-check-label">자동 전환</span></label>
+                    <label class="form-check form-switch m-0"><input class="form-check-input" type="checkbox" id="mute"><span class="form-check-label">음소거</span></label>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="grip" id="grip" title="끌어서 영상 크기 조절 · 두 번 누르면 보통 크기" aria-hidden="true"><span></span></div>
+          </div>
+
+          <div class="col-lg-4" id="colList">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">작업 목록</h3>
+                <div class="card-actions"><span class="text-secondary small" id="count"></span></div>
+              </div>
+              <div class="list-scroll"><div>
+                <table class="table card-table table-vcenter table-hover">
+                  <thead><tr><th>ID</th><th>항목</th><th>상태</th></tr></thead>
+                  <tbody id="rows"></tbody>
+                </table>
+              </div></div>
+            </div>
+          </div>
+
+          <div class="col-md-6 col-lg-5">
+            <div class="card">
+              <div class="card-header"><h3 class="card-title">주간 처리량</h3><div class="card-actions"><span class="text-secondary small">최근 8주 · 건</span></div></div>
+              <div class="card-body weekly"><svg id="weekly" viewBox="0 0 520 190" aria-hidden="true"></svg>
+                <div class="d-flex gap-3 small text-secondary mt-2"><span><span class="badge bg-primary me-1 p-1"></span>처리</span><span><span class="badge bg-primary-lt me-1 p-1"></span>접수</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-3">
+            <div class="card">
+              <div class="card-header"><h3 class="card-title">부서별 진행률</h3></div>
+              <div class="card-body" id="dept"></div>
+            </div>
+          </div>
+          <div class="col-lg-4">
+            <div class="card">
+              <div class="card-header"><h3 class="card-title">최근 활동</h3></div>
+              <div class="card-body"><div class="divide-y" id="activity"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="footer footer-transparent d-print-none">
+      <div class="container-xl">
+        <div class="row text-center align-items-center flex-row-reverse">
+          <div class="col-lg-auto ms-lg-auto"><ul class="list-inline list-inline-dots mb-0"><li class="list-inline-item"><a href="#" class="link-secondary">도움말</a></li><li class="list-inline-item"><a href="#" class="link-secondary">개인정보처리방침</a></li></ul></div>
+          <div class="col-12 col-lg-auto mt-3 mt-lg-0"><ul class="list-inline list-inline-dots mb-0"><li class="list-inline-item">운영관리 시스템</li><li class="list-inline-item"><span class="ver" id="ver">v2.4.1</span></li></ul></div>
+        </div>
+      </div>
+    </footer>
+  </div>
+</div>
+
+<script>
+{{TABLER_JS}}
+</script>
+<script>
+// [회차, 영상ID, 제목, 엔딩곡 시작(초, 없으면 null)]
+const EPISODES = {{CATALOG}};
+const ICON = { play: {{js:player-play}}, pause: {{js:player-pause}}, up: {{js:trending-up}}, down: {{js:trending-down}} };
+</script>
+<script>
+(function(){
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const DEFAULT_ENDING = 60;
+  const fmt = (s) => { s = Math.max(0, Math.floor(s)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, parent) => { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); if (parent) parent.appendChild(n); return n; };
+  const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const PRI = css("--tblr-primary") || "#066fd1", GRID = css("--tblr-border-color") || "#e6e7e9", MUTED = css("--tblr-secondary") || "#6b7280";
+
+  // ---------- 겉모습 (보여주기용 예시 수치) ----------
+  const d = new Date();
+  $("today").textContent = d.getFullYear() + "." + String(d.getMonth() + 1).padStart(2, "0") + "." + String(d.getDate()).padStart(2, "0") + " 기준";
+  [["진행 중 과제", "12", "+2", true, [7,8,8,9,10,10,11,12]],
+   ["일정 준수율", "94.2%", "+1.3%p", true, [88,90,89,91,92,93,93,94]],
+   ["미해결 이슈", "3", "-2", true, [8,7,7,6,5,5,4,3]],
+   ["금주 산출물", "7", "-1", false, [5,6,8,7,9,8,8,7]]].forEach(([l, v, dl, good, s]) => {
+    const col = document.createElement("div"); col.className = "col-sm-6 col-lg-3";
+    col.innerHTML = '<div class="card"><div class="card-body"><div class="d-flex align-items-center"><div class="subheader"></div><div class="ms-auto lh-1 text-secondary small">최근 7일</div></div>' +
+      '<div class="d-flex align-items-baseline"><div class="h1 mb-0 me-2"></div><div class="me-auto"><span class="d-inline-flex align-items-center lh-1 ' + (good ? "text-green" : "text-red") + '"><span class="dl"></span>' + (good ? ICON.up : ICON.down) + '</span></div></div></div><div class="chart-sm"></div></div>';
+    col.querySelector(".subheader").textContent = l; col.querySelector(".h1").textContent = v; col.querySelector(".dl").textContent = dl;
+    const svg = el("svg", { viewBox: "0 0 120 40", preserveAspectRatio: "none" }, col.querySelector(".chart-sm"));
+    const mn = Math.min(...s), mx = Math.max(...s);
+    const pts = s.map((y, i) => [i * (120 / (s.length - 1)), 36 - ((y - mn) / (mx - mn || 1)) * 30]);
+    el("path", { d: "M" + pts.map(p => p.join(",")).join("L") + "L120,40L0,40Z", fill: PRI, "fill-opacity": .12 }, svg);
+    el("polyline", { points: pts.map(p => p.join(",")).join(" "), fill: "none", stroke: PRI, "stroke-width": 2, "vector-effect": "non-scaling-stroke" }, svg);
+    $("kpiAnchor").before(col);
+  });
+  (function weekly(){
+    const svg = $("weekly"), a = [42,48,45,53,51,58,55,61], b = [46,50,49,55,57,60,59,64];
+    for (let i = 0; i <= 4; i++) { const y = 165 - i * 37; el("line", { x1: 30, x2: 515, y1: y, y2: y, stroke: GRID }, svg); el("text", { x: 24, y: y + 4, "text-anchor": "end", "font-size": 10, fill: MUTED }, svg).textContent = i * 20; }
+    a.forEach((v, i) => {
+      const x = 44 + i * 59;
+      el("rect", { x, y: 165 - b[i] * 1.85, width: 20, height: b[i] * 1.85, rx: 3, fill: PRI, "fill-opacity": .25 }, svg);
+      el("rect", { x: x + 22, y: 165 - v * 1.85, width: 20, height: v * 1.85, rx: 3, fill: PRI }, svg);
+      el("text", { x: x + 21, y: 182, "text-anchor": "middle", "font-size": 10, fill: MUTED }, svg).textContent = "W" + (i + 1);
+    });
+  })();
+  $("dept").innerHTML = [["기획", 82, "bg-green"], ["개발", 67, "bg-primary"], ["운영", 91, "bg-green"], ["품질", 74, "bg-primary"], ["지원", 58, "bg-yellow"]]
+    .map(([n, v, c]) => '<div class="mb-3"><div class="d-flex mb-1"><div>' + n + '</div><div class="ms-auto text-secondary">' + v + '%</div></div><div class="progress progress-sm"><div class="progress-bar ' + c + '" style="width:' + v + '%"></div></div></div>').join("");
+  $("activity").innerHTML = [["기", "기획팀", "요구사항 정의서 v1.3 승인 요청", "12분 전", "bg-blue-lt"],
+    ["개", "개발팀", "인터페이스 설계서 수정본 등록", "38분 전", "bg-green-lt"],
+    ["품", "품질팀", "단위시험 결과 보고 업로드", "1시간 전", "bg-purple-lt"],
+    ["운", "운영팀", "정기 점검 체크리스트 완료", "2시간 전", "bg-orange-lt"],
+    ["지", "지원팀", "투입 인력 현황 갱신", "어제", "bg-secondary-lt"]]
+    .map(([a, t, x, w, c]) => '<div><div class="row"><div class="col-auto"><span class="avatar avatar-sm ' + c + '">' + a + '</span></div><div class="col"><div class="text-truncate"><strong>' + t + '</strong> ' + x + '</div><div class="text-secondary small">' + w + '</div></div></div></div>').join("");
+
+  // 숨김 화면: 조금씩 움직이는 실시간 그래프
+  const live = Array.from({ length: 40 }, (_, i) => 55 + Math.sin(i / 3) * 12 + (i * 7 % 5));
+  function drawDecoy(){
+    const svg = $("decoyChart"); svg.textContent = "";
+    for (let i = 0; i <= 5; i++) { const y = 30 + i * 60; el("line", { x1: 40, x2: 630, y1: y, y2: y, stroke: GRID }, svg); el("text", { x: 32, y: y + 4, "text-anchor": "end", "font-size": 11, fill: MUTED }, svg).textContent = 100 - i * 20; }
+    const pts = live.map((v, i) => [40 + i * (590 / (live.length - 1)), 330 - v * 3]);
+    el("path", { d: "M" + pts.map(p => p.join(",")).join("L") + "L630,330L40,330Z", fill: PRI, "fill-opacity": .1 }, svg);
+    el("polyline", { points: pts.map(p => p.join(",")).join(" "), fill: "none", stroke: PRI, "stroke-width": 2 }, svg);
+    const last = pts[pts.length - 1]; el("circle", { cx: last[0], cy: last[1], r: 4, fill: PRI }, svg);
+    el("text", { x: 48, y: 22, "font-size": 12, fill: MUTED }, svg).textContent = "처리량 (건/분)";
+  }
+  setInterval(() => { live.shift(); live.push(Math.max(30, Math.min(85, live[live.length - 1] + (Math.random() - .5) * 10))); if (!$("decoy").hidden) drawDecoy(); }, 3000);
+  drawDecoy();
+
+  // ---------- 저장: 우사기 TV 화면과 같은 기록을 씀 ----------
+  const KEY = "usagi-tv-v1";
+  const store = Object.assign({ last: null, advance: true, mute: false, pos: {} }, (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } })());
+  const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {} };
+  const byId = new Map(EPISODES.map((e, i) => [e[1], i]));
+  let idx = store.last && byId.has(store.last) ? byId.get(store.last) : 0;
+  $("advance").checked = store.advance !== false;
+  $("mute").checked = !!store.mute;
+  $("count").textContent = "총 " + EPISODES.length + "건";
+  const code = (e) => "T-" + String(e[0]).padStart(3, "0");
+
+  function badge(e, i){
+    if (i === idx) return ["bg-primary text-white", "진행"];
+    const p = store.pos[e[1]];
+    if (p && p.done) return ["bg-success-lt", "완료"];
+    if (p && p.t) return ["bg-warning-lt", "보류"];
+    return ["bg-secondary-lt", "대기"];
+  }
+  function renderRows(){
+    const q = $("search").value.trim().replace(/화$/, "");
+    const tb = $("rows"); tb.textContent = "";
+    EPISODES.forEach((e, i) => {
+      if (q && !(String(e[0]) === q || e[2].includes(q))) return;
+      const tr = document.createElement("tr"); if (i === idx) tr.className = "cur";
+      const [cls, label] = badge(e, i);
+      tr.innerHTML = '<td class="text-secondary">' + code(e) + '</td><td class="nm"></td><td><span class="badge ' + cls + '"></span></td>';
+      tr.children[1].textContent = e[2]; tr.children[1].title = e[2];
+      tr.querySelector(".badge").textContent = label;
+      tr.addEventListener("click", () => openAt(i, true));
+      tb.appendChild(tr);
+    });
+  }
+  $("search").addEventListener("input", renderRows);
+
+  // ---------- 플레이어 ----------
+  let player = null, ready = false, armed = false, prevT = null, prevAt = 0, lastSave = 0, snapshot = null, hidden = false, wasPlaying = false;
+  let pipWin = null;
+  // target: 플레이어를 넣을 요소. resume: {t, play} 가 있으면 그 위치부터 이어서
+  function makePlayer(target, resume){
+    ready = false;
+    player = new YT.Player(target, {
+      width: "100%", height: "100%",
+      videoId: cur()[1],
+      playerVars: { playsinline: 1, rel: 0, hl: "ko", origin: location.origin, start: resume ? Math.floor(resume.t) : 0, autoplay: resume && resume.play ? 1 : 0 },
+      events: {
+        onReady(){
+          ready = true; applyMute();
+          if (!resume) { openAt(idx, false); return; }
+          prevT = null; armed = resume.t < endingAt() - 0.5;
+          if (resume.play) player.playVideo();
+        },
+        onStateChange(e){ onState(e.data); },
+        onError(e){ msg("이 항목은 재생할 수 없어요(오류 " + e.data + "). 다음으로 넘어가세요."); },
+      },
+    });
+  }
+  window.onYouTubeIframeAPIReady = function(){ makePlayer("player", null); };
+  const s = document.createElement("script");
+  s.src = "https://www.youtube.com/iframe_api";
+  s.onerror = () => msg("영상 서버에 연결할 수 없어요. 회사 네트워크에서 유튜브가 막혀 있을 수 있어요.");
+  document.head.appendChild(s);
+
+  const cur = () => EPISODES[idx];
+  const endingAt = () => (cur()[3] != null ? cur()[3] : DEFAULT_ENDING);
+  const playing = () => ready && player.getPlayerState && player.getPlayerState() === YT.PlayerState.PLAYING;
+
+  function openAt(i, autoplay){
+    if (i < 0 || i >= EPISODES.length) return;
+    saveNow();
+    idx = i; armed = false; prevT = null;
+    const e = cur(); store.last = e[1]; persist();
+    const p = store.pos[e[1]];
+    snapshot = p && !p.done && p.t >= 5 ? p.t : null;
+    $("nowsub").textContent = code(e) + " · " + e[2];
+    $("prev").disabled = i === 0; $("next").disabled = i === EPISODES.length - 1;
+    $("resume").hidden = snapshot === null; if (snapshot !== null) $("resumeLabel").textContent = "이어서 (" + fmt(snapshot) + ")";
+    renderRows();
+    const row = $("rows").querySelector(".cur"); if (row) row.scrollIntoView({ block: "nearest" });
+    if (!ready) return;
+    if (autoplay && !hidden) player.loadVideoById({ videoId: e[1], startSeconds: 0 });
+    else player.cueVideoById({ videoId: e[1], startSeconds: 0 });
+  }
+  function onState(st){
+    const on = st === YT.PlayerState.PLAYING;
+    $("playIco").innerHTML = on ? ICON.pause : ICON.play; $("playLabel").textContent = on ? "일시정지" : "재생";
+    if (st === YT.PlayerState.PAUSED) saveNow();
+    if (st === YT.PlayerState.ENDED) { markDone(); if ($("advance").checked) goNext("다음 항목으로 넘어갔어요."); }
+  }
+  setInterval(() => {
+    if (!playing()) { prevT = null; return; }
+    const vd = player.getVideoData ? player.getVideoData() : null;
+    if (!vd || vd.video_id !== cur()[1]) return;
+    const t = player.getCurrentTime(), now = Date.now(), end = endingAt();
+    if (prevT !== null) {
+      const allowed = ((now - prevAt) / 1000) * 2 + 1;
+      if (Math.abs(t - prevT) > allowed) armed = t < end - 0.5;
+      else if (t < end - 0.5) armed = true;
+    }
+    prevT = t; prevAt = now;
+    if ($("advance").checked && armed && t >= end) { armed = false; markDone(); goNext("다음 항목으로 넘어갔어요."); return; }
+    if (now - lastSave > 5000) saveNow();
+  }, 250);
+  function saveNow(){
+    if (!ready || !player.getCurrentTime) return;
+    const vd = player.getVideoData ? player.getVideoData() : null;
+    if (!vd || vd.video_id !== cur()[1]) return;
+    const t = player.getCurrentTime(); if (!(t >= 5)) return;
+    lastSave = Date.now();
+    store.pos[cur()[1]] = { t: Math.floor(t), done: false }; persist();
+  }
+  function markDone(){ store.pos[cur()[1]] = { t: 0, done: true }; persist(); }
+  function goNext(text){ if (idx >= EPISODES.length - 1) { msg("마지막 항목이에요."); return; } msg(text || ""); openAt(idx + 1, true); }
+  let mt; function msg(t){ $("msg").textContent = t; clearTimeout(mt); if (t) mt = setTimeout(() => $("msg").textContent = "", 5000); }
+  function applyMute(){ if (!ready) return; if ($("mute").checked) player.mute(); else player.unMute(); }
+
+  // ---------- 화면 전환(숨기기) ----------
+  function setHidden(on){
+    if (on === hidden) return;
+    let pipWasPlaying = null;
+    if (on && pipWin) { pipWasPlaying = playing(); hidden = true; closePip(); }
+    hidden = on;
+    if (on) { wasPlaying = pipWasPlaying !== null ? pipWasPlaying : playing(); if (ready) { player.pauseVideo(); saveNow(); } drawDecoy(); }
+    $("decoy").hidden = !on;
+    const f = document.querySelector(".screen iframe"); if (f) f.style.visibility = on ? "hidden" : "";
+    $("hideLabel").textContent = on ? "모니터 보기" : "화면 전환";
+    if (!on && wasPlaying && ready) player.playVideo();
+  }
+  if (location.hash === "#hide") { setHidden(true); history.replaceState(null, "", location.pathname); }
+  $("hide").addEventListener("click", () => setHidden(!hidden));
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" || e.key === "`") { e.preventDefault(); setHidden(!hidden); }
+  });
+  window.addEventListener("blur", () => setTimeout(() => {
+    const a = document.activeElement;
+    if (a && a.tagName === "IFRAME") { a.blur(); window.focus(); }
+  }, 0));
+  document.addEventListener("visibilitychange", () => { if (document.hidden && !pipWin && playing()) { player.pauseVideo(); saveNow(); } });
+
+  // ---------- 작은 창(PIP): 다른 프로그램 위에 항상 떠 있는 창 ----------
+  const pipOK = "documentPictureInPicture" in window;
+  function freshMainSlot(){
+    const scr = document.querySelector(".screen");
+    scr.querySelectorAll("iframe, #player").forEach(n => n.remove());
+    const slot = document.createElement("div"); slot.id = "player";
+    scr.insertBefore(slot, scr.firstChild);
+    return slot;
+  }
+  async function openPip(){
+    if (!pipOK) { msg("이 브라우저는 작은 창을 지원하지 않아요. 크롬·엣지 최신 버전에서 열어 주세요. (영상 위에서 마우스 오른쪽 버튼을 두 번 누르면 나오는 'PIP 모드'로도 볼 수 있어요)"); return; }
+    if (!ready || pipWin || hidden) return;
+    const resume = { t: player.getCurrentTime() || 0, play: playing() || player.getPlayerState() !== YT.PlayerState.PAUSED };
+    saveNow();
+    let w;
+    try { w = await documentPictureInPicture.requestWindow({ width: 480, height: 270 }); }
+    catch (e) { msg("작은 창을 열지 못했어요. 다시 눌러 주세요."); return; }
+    pipWin = w;
+    w.document.title = "모니터링";
+    const st = w.document.createElement("style");
+    st.textContent = "html,body{margin:0;height:100%;background:#000;overflow:hidden}#slot,#slot iframe{position:fixed;inset:0;width:100%;height:100%;border:0}";
+    w.document.head.appendChild(st);
+    const slot = w.document.createElement("div"); slot.id = "slot"; w.document.body.appendChild(slot);
+    const inner = w.document.createElement("div"); slot.appendChild(inner);
+    w.document.addEventListener("keydown", (e) => { if (e.key === "Escape" || e.key === "`") { e.preventDefault(); setHidden(true); } });
+    try { player.destroy(); } catch (e) {}
+    freshMainSlot();
+    $("pipNote").hidden = false; $("pipLabel").textContent = "작은 창 닫기";
+    makePlayer(inner, resume);
+    w.addEventListener("pagehide", () => { if (pipWin === w) backFromPip(); });
+  }
+  function backFromPip(){
+    const keepPlaying = !hidden && playing();
+    const resume = { t: (ready && player.getCurrentTime) ? player.getCurrentTime() : 0, play: keepPlaying };
+    saveNow();
+    try { player.destroy(); } catch (e) {}
+    pipWin = null;
+    $("pipNote").hidden = true; $("pipLabel").textContent = "작은 창";
+    makePlayer(freshMainSlot(), resume);
+    if (hidden) { const f = () => { const fr = document.querySelector(".screen iframe"); if (fr) fr.style.visibility = "hidden"; }; setTimeout(f, 0); setTimeout(f, 500); }
+  }
+  function closePip(){ if (pipWin) { const w = pipWin; backFromPip(); try { w.close(); } catch (e) {} } }
+  $("pipBtn").addEventListener("click", () => pipWin ? closePip() : openPip());
+
+  // 숨은 출구: 맨 아래 버전 글자(v2.4.1)를 빠르게 세 번 누르면 우사기 TV 화면으로
+  let taps = [];
+  $("ver").addEventListener("click", () => {
+    const now = Date.now(); taps = taps.filter(t => now - t < 1500); taps.push(now);
+    if (taps.length >= 3) { saveNow(); location.href = "index.html"; }
+  });
+
+  $("play").addEventListener("click", () => { if (!ready || hidden) return; playing() ? player.pauseVideo() : player.playVideo(); });
+  $("prev").addEventListener("click", () => openAt(idx - 1, true));
+  $("next").addEventListener("click", () => goNext(""));
+  $("resume").addEventListener("click", () => {
+    if (!ready || snapshot === null) return;
+    prevT = null; armed = snapshot < endingAt() - 0.5;
+    player.seekTo(snapshot, true); player.playVideo(); snapshot = null; $("resume").hidden = true;
+  });
+  $("advance").addEventListener("change", (e) => { store.advance = e.target.checked; persist(); });
+  $("mute").addEventListener("change", (e) => { store.mute = e.target.checked; persist(); applyMute(); });
+  // 영상 크기: 경계를 끌어서 자유롭게 + 작게/보통/크게 버튼은 미리 정해둔 폭
+  const PRESET = { s: 40, m: 66.6667, l: 100 };
+  const colMon = $("colMon"), colList = $("colList"), grip = $("grip");
+  function setWidth(pct, save){
+    pct = Math.max(28, Math.min(100, pct));
+    if (pct > 88) pct = 100;                       // 거의 다 넓히면 영상 전체 폭, 목록은 아래로
+    colMon.className = "col-12 col-lg-auto"; colList.className = "col-12 col-lg-auto";
+    colMon.style.setProperty("--w", pct + "%");
+    colList.style.setProperty("--w", (pct >= 100 ? 100 : 100 - pct) + "%");
+    document.querySelectorAll("#sizes .btn").forEach(b => b.classList.toggle("active", Math.abs(PRESET[b.dataset.size] - pct) < 0.5));
+    if (save) { store.width = pct; persist(); }
+  }
+  document.querySelectorAll("#sizes .btn").forEach(b => b.addEventListener("click", () => setWidth(PRESET[b.dataset.size], true)));
+  const legacy = { s: PRESET.s, m: PRESET.m, l: PRESET.l };
+  setWidth(typeof store.width === "number" ? store.width : (legacy[store.size] || PRESET.m), false);
+
+  let dragging = false;
+  grip.addEventListener("pointerdown", (e) => {
+    dragging = true; grip.setPointerCapture(e.pointerId);
+    document.body.classList.add("resizing"); e.preventDefault();
+  });
+  grip.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    const row = colMon.parentElement.getBoundingClientRect();
+    setWidth(((e.clientX - row.left) / row.width) * 100, false);
+  });
+  const stop = () => { if (!dragging) return; dragging = false; document.body.classList.remove("resizing");
+    store.width = parseFloat(colMon.style.getPropertyValue("--w")); persist(); };
+  grip.addEventListener("pointerup", stop); grip.addEventListener("pointercancel", stop);
+  grip.addEventListener("dblclick", () => setWidth(PRESET.m, true));   // 두 번 누르면 보통 크기로
+  window.addEventListener("pagehide", saveNow);
+  document.querySelectorAll('a[href="#"]').forEach(a => a.addEventListener("click", (e) => e.preventDefault()));
+
+  renderRows();
+})();
+</script>
+</body>
+</html>
